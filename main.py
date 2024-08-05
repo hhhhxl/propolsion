@@ -151,7 +151,7 @@ def load_Ab():
     return Ab_data, e_data, e_average, Vc_data
 
 
-def compute(P0):
+def compute_Pt(P0):
     #循环迭代计算
     i = 0
 
@@ -166,7 +166,7 @@ def compute(P0):
     gamma = data_grain["gamma"]
 
     Gamma = srm.SRM_Solver.Gamma(gamma)
-    At = 1e-4*data_nozzle["At"]
+    At = 1e-4*data_nozzle["At"]  
 
     #初始化numpy列表
     Pc = np.array([])
@@ -240,7 +240,7 @@ def compute(P0):
 
 if __name__ == '__main__':
 
-    Pc, t = compute(1000000)
+    Pc, t = compute_Pt(1000000)
 
     print(len(Pc))
     print(len(t))
