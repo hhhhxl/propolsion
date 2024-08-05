@@ -135,20 +135,32 @@ def load_Ab():
 
     # 将数据转换为 NumPy 数组
     data1 = np.array(data1)
+
     # 提取e和Ab
-    e_data = 0.0254*data1[:, 0]
+    # e_data = 0.0254*data1[:, 0]
+    e_data = data1[:, 0]
+    # Vc_data = 16.387064*1e-6*data1[:, 1]
     Vc_data = data1[:, 1]
+
 
     # 计算平均肉厚（求解步长）
     first_column_diff = np.diff(e_data)
     e_average = np.mean(first_column_diff)
 
-    Ab_data= -16.387064*np.diff(Vc_data)
+    # 将Vc_data转换为m^3
+    Vc_data_trans = Vc_data * 0.0000164
+
+    Vc_data_diff = np.diff(Vc_data)
+
+    Ab_data= -1*Vc_data_diff
     # Ab_data.insert(0, 0)  # 在列表开头插入0
     np.append(Ab_data, [0])
 
+    Ab_data = (Ab_data / e_average)*0.0006452
 
-    return Ab_data, e_data, e_average, Vc_data
+    e_average_trans = e_average * 0.0254
+
+    return Ab_data, e_data, e_average_trans, Vc_data_trans
 
 
 def compute_Pt(P0):
@@ -158,6 +170,11 @@ def compute_Pt(P0):
     # 初始化计算过程，包括读取 Grain、燃烧速率、A_e 和喷管数据，并读取和提取设置文件中的变量
     data_grain, data_burning_rate, data_A_e, data_nozzle = init_computation()
     Ab_data, e_data, e_step, Vc_data = load_Ab()
+
+    
+
+    Vc_data = 1e-6*data_grain["Volum"] - Vc_data
+
 
     # 获取计算参数
     rho_b = 1000*data_grain["density"]
@@ -186,6 +203,8 @@ def compute_Pt(P0):
         rate_a = srm.SRM_Solver.rate_a(Pc[i], data_burning_rate)
         rate_n = srm.SRM_Solver.rate_n(Pc[i], data_burning_rate)
 
+
+
         #获取Kb
         Kb = Ab_data[i] / At
 
@@ -204,10 +223,10 @@ def compute_Pt(P0):
 
         pp3 = 1/(1-rate_n)
 
-        pp1 = round(pp1, 4)
+        # pp1 = round(pp1, 4)
 
-        pp2 = round(pp2, 4)
-        pp3 = round(pp3, 4)
+        # pp2 = round(pp2, 4)
+        # pp3 = round(pp3, 4)
 
         Pc_unit = ((pp1 - pp2)**pp3 + Pc[i]) / 2
 
@@ -242,8 +261,8 @@ if __name__ == '__main__':
 
     Pc, t = compute_Pt(1000000)
 
-    print(len(Pc))
-    print(len(t))
+    # print(len(Pc))
+    # print(len(t))
 
     plt.plot(t, Pc)
     plt.grid(True)
