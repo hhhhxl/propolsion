@@ -163,7 +163,6 @@ def load_Ab():
 
     return Ab_data, e_data, e_average_trans, Vc_data_trans
 
-
 def compute_Pt(P0):
     #循环迭代计算
     i = 0
@@ -257,23 +256,7 @@ def compute_Pt(P0):
 
     return Pc, t
 
-
-
-# def calculate_pe(p_c):
-#     gamma = 1.4
-#     Ma = 0.9999
-#     return p_c / (1 + (gamma - 1) / 2 * Ma**2) ** (gamma / (gamma - 1))
-
 def calculate_C_F(p_c):
-    '''
-    gamma = 1.4
-    p_a = 101325
-    term1 = (2 / (gamma + 1)) ** ((gamma + 1) / (2 * (gamma - 1)))
-    term2 = np.sqrt(gamma) * np.sqrt(
-        (2 * gamma / (gamma - 1)) * (1 - (p_e / p_c) ** ((gamma - 1) / gamma))
-    )
-    term3 = (p_e / p_c) - (p_a / p_c)
-    '''
 
     data_grain, data_burning_rate, data_A_e, data_nozzle = init_computation()
 
@@ -311,8 +294,6 @@ def calculate_F(p_c):
 
     return F
 
-
-
 def plot_chart_P(t, Pc):
     """
     绘制 Pc 随时间变化的图表。
@@ -339,7 +320,6 @@ def plot_chart_P(t, Pc):
 
     # 显示图表
     #plt.show()
-
 
 def plot_chart_F(t, Pc):
     """
@@ -369,8 +349,6 @@ def plot_chart_F(t, Pc):
     # 显示图表
     plt.show()
 
-
-
 def write_to_csv_with_pandas(t, Pc, filename):
     """
     使用 Pandas 将时间序列 t 和对应的 Pc 值写入 CSV 文件。
@@ -389,8 +367,6 @@ def write_to_csv_with_pandas(t, Pc, filename):
     # 将 DataFrame 写入 CSV 文件
     df.to_csv(filename, index=False)
 
-
-
 if __name__ == '__main__':
 
     Pc, t = compute_Pt(1000000)
@@ -405,17 +381,4 @@ if __name__ == '__main__':
 
     plot_chart_F(t, F)
 
-    #plot_chart(t, Pc)
-
-'''
-    plt.title('Pc-----Time')
-    plt.xlabel('Time (s)')  # 横坐标单位
-    plt.ylabel('Pc (Pa)')  # 纵坐标单位
-
-    plt.plot(t, Pc, 'o-', markersize=3, label='Data Points')  # 'o-' 表示圆形标记和线连接
-
-
-    plt.grid(True)
-    plt.show()
-'''
 
