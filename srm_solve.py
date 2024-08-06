@@ -44,6 +44,15 @@ class SRM_Solver:
 
         return P0,e_span
     
+
+
+    def calculate_pe(p_c, gamma, Ma):
+        #Ma = 0.9999
+        Rest = p_c / (1 + ((gamma - 1) / 2 * Ma**2)) ** ((gamma - 1)/gamma)
+
+        return Rest
+
+    
     def solve_ode(self,ode_function,P0,e_max):
 
         # 定义微分方程

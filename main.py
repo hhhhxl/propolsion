@@ -8,6 +8,7 @@ from scipy.misc import derivative
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+import pandas as pd
 
 
 def set_directory():
@@ -162,7 +163,6 @@ def load_Ab():
 
     return Ab_data, e_data, e_average_trans, Vc_data_trans
 
-
 def compute_Pt(P0):
     #循环迭代计算
     i = 0
@@ -256,16 +256,129 @@ def compute_Pt(P0):
 
     return Pc, t
 
+def calculate_C_F(p_c):
+
+    data_grain, data_burning_rate, data_A_e, data_nozzle = init_computation()
+
+    p_a = 101325
+    Ma = 0.999
+
+    Ae = 1e-4*data_nozzle["Ae"]
+    At = 1e-4*data_nozzle["At"]
+    gamma = data_grain["gamma"]
+
+    Gamma = srm.SRM_Solver.Gamma(gamma)
+
+    p_e = srm.SRM_Solver.calculate_pe(p_c, gamma, Ma)
+
+    term1 = 2*gamma/(gamma-1)*(1 - (p_e / p_c) ** ((gamma - 1) / gamma))
+    term1 = Gamma*np.sqrt(term1)
+
+    term2 = (Ae/At)*((p_e / p_c) - (p_a / p_c))
+
+
+
+    return term1 + term2
+
+def calculate_F(p_c):
+
+    data_grain, data_burning_rate, data_A_e, data_nozzle = init_computation()
+    C_F = calculate_C_F(p_c)
+
+    At = 1e-4*data_nozzle["At"]
+
+    eta = data_nozzle["eta"]
+
+
+    F = C_F * eta * At * p_c
+
+    return F
+
+def plot_chart_P(t, Pc):
+    """
+    绘制 Pc 随时间变化的图表。
+
+    :param t: 时间序列数据
+    :param Pc: 对应的 Pc 值序列
+    """
+
+    plt.figure(num='Pc vs Time',figsize=(8, 6))
+
+    # 设置图表的标题和坐标轴标签
+    plt.title('Pc-----Time')
+    plt.xlabel('Time (s)')  # 横坐标单位
+    plt.ylabel('Pc (Pa)')  # 纵坐标单位
+
+    # 绘制数据点，并使用圆点形状，同时减小圆点大小
+    plt.plot(t, Pc, 'o-', markersize=3, label='Data Points')  # 'o-' 表示圆形标记和线连接
+
+    # 显示网格
+    plt.grid(True)
+
+    # 添加图例
+    plt.legend()
+
+    # 显示图表
+    #plt.show()
+
+def plot_chart_F(t, Pc):
+    """
+    绘制 Pc 随时间变化的图表。
+
+    :param t: 时间序列数据
+    :param Pc: 对应的 Pc 值序列
+    """
+
+
+    plt.figure(num='F vs Time',figsize=(8, 6))
+
+    # 设置图表的标题和坐标轴标签
+    plt.title('F-----Time')
+    plt.xlabel('Time (s)')  # 横坐标单位
+    plt.ylabel('F (N)')  # 纵坐标单位
+
+    # 绘制数据点，并使用圆点形状，同时减小圆点大小
+    plt.plot(t, Pc, 'o-', markersize=3, label='Data Points')  # 'o-' 表示圆形标记和线连接
+
+    # 显示网格
+    plt.grid(True)
+
+    # 添加图例
+    plt.legend()
+
+    # 显示图表
+    plt.show()
+
+def write_to_csv_with_pandas(t, Pc, filename):
+    """
+    使用 Pandas 将时间序列 t 和对应的 Pc 值写入 CSV 文件。
+
+    :param t: 时间序列数据
+    :param Pc: 对应的 Pc 值序列
+    :param filename: 输出 CSV 文件的名称，默认为 'pt_data.csv'
+    """
+    # 创建 DataFrame
+    data = {
+        'Time (s)': t,
+        'Pc (Pa)': Pc
+    }
+    df = pd.DataFrame(data)
+
+    # 将 DataFrame 写入 CSV 文件
+    df.to_csv(filename, index=False)
 
 if __name__ == '__main__':
 
     Pc, t = compute_Pt(1000000)
 
-    # print(len(Pc))
-    # print(len(t))
+    filename ='Pt_data.csv'
 
-    plt.plot(t, Pc)
-    plt.grid(True)
-    plt.show()
+    #write_to_csv_with_pandas(t, Pc, filename)
+
+    F = calculate_F(Pc)
+
+    plot_chart_P(t, Pc)
+
+    plot_chart_F(t, F)
 
 
