@@ -123,7 +123,7 @@ def load_Ab():
     #data_A_e = read_json(f"{A_e_dir}/test.txt")
     data1 = []
     # 读取文件并过滤有效数据
-    with open(f"{A_e_dir}/test.txt", 'r') as file:
+    with open(f"{A_e_dir}/test.grt", 'r') as file:
         for line in file:
             parts = line.split()
             # 仅保留数字部分
@@ -179,21 +179,37 @@ def compute_Pt(P0):
     # 获取计算参数
     rho_b = 1000*data_grain["density"]
 
+    P_atm = data_nozzle["P_atm"]
+
     c_star = data_grain["C*"]
     gamma = data_grain["gamma"]
 
     Gamma = srm.SRM_Solver.Gamma(gamma)
     At = 1e-4*data_nozzle["At"]  
 
+
+    K0 = Ab_data[0] / At
+
     #初始化numpy列表
     Pc = np.array([])
-    Pc = np.append(Pc,P0)
+    #Pc = np.append(Pc,[0])
 
     t = np.array([])
-    t = np.append(t,[0])
+    
+
+    Pc = np.append(Pc,P0)
+
+    rate_a = srm.SRM_Solver.rate_a(P0, data_burning_rate)
+    rate_n = srm.SRM_Solver.rate_n(P0, data_burning_rate)
+
+    #计算点火段长度
+    t_ig = np.append(t,compute_init_ig(P0, Vc_data[0], Gamma, c_star, At, rho_b, K0, rate_a, rate_n))
+    t = np.append(t,[t_ig])
+
 
     #设置初值
     dP = 0
+
 
     #进入循环
     #while True:
@@ -202,7 +218,6 @@ def compute_Pt(P0):
         #获取a，n
         rate_a = srm.SRM_Solver.rate_a(Pc[i], data_burning_rate)
         rate_n = srm.SRM_Solver.rate_n(Pc[i], data_burning_rate)
-
 
 
         #获取Kb
@@ -240,7 +255,7 @@ def compute_Pt(P0):
         dp = Pc_unit - P_cold
 
         #计算时间并加入列表
-        t_unit = e_step/(rate_a*(Pc_unit)**(rate_n))
+        t_unit = e_step / (rate_a*(Pc_unit)**(rate_n))
 
         tt = t[i] + t_unit
 
@@ -252,7 +267,26 @@ def compute_Pt(P0):
 
         #循环结束判断
         if i == (len(Ab_data)):
+
+            # Vc = 1e-6*data_grain["Volum"]
+            # t_post = compute_post(Vc, Gamma, Pceq, c_star, At,Pc)
+
+            # t = np.append(t, t_post)
+            # Pc = np.append(Pc, 0)
             break
+
+        # if (i != 0) and (Pc_unit < P_atm):
+        #     break
+
+    
+    t = np.insert(t, 0, 0)
+    Pc = np.insert(Pc, 0, 0)
+
+    # Vc = 1e-6*data_grain["Volum"]
+    # t_post = compute_post(Vc, Gamma, Pceq, c_star, At,Pc_unit)
+
+    # t = np.append(t, t_post)
+    # Pc = np.append(Pc, 0)
 
     return Pc, t
 
@@ -301,6 +335,9 @@ def plot_chart_P(t, Pc):
     :param t: 时间序列数据
     :param Pc: 对应的 Pc 值序列
     """
+
+    # t = np.insert(t, 0, t_ig)
+    # t = np.insert(t, 0, t_ig)
 
     plt.figure(num='Pc vs Time',figsize=(8, 6))
 
@@ -367,9 +404,39 @@ def write_to_csv_with_pandas(t, Pc, filename):
     # 将 DataFrame 写入 CSV 文件
     df.to_csv(filename, index=False)
 
+def compute_init_ig(P0, Vc, Gamma, c_star, At, rho_p, K0, rate_a, rate_n):
+    #计算点火段
+    
+    C_eq = (rho_p*c_star*rate_a)**(1/(1-rate_n))
+    Pceq = C_eq*(K0**(1/(1-rate_n)))
+
+
+    C1 = (1/(1-rate_n))*(Vc/((Gamma**2)*c_star*At))
+
+    cc2 = rho_p*c_star*K0-P0**(1-rate_n)
+    ccc2 = rho_p*c_star*K0-Pceq**(1-rate_n)
+    C2 = np.log(cc2 / ccc2)
+
+    t = C1*C2
+
+    return t
+
+def compute_post(Vc, Gamma, Pceq, c_star, At, Pc):
+    #后效段求解
+
+
+
+
+    ttt1 = Vc/(Gamma*c_star*At)
+    ttt2 = np.log(Pceq/Pc)
+    t = ttt1*ttt2
+    
+    
+    return t
+
 if __name__ == '__main__':
 
-    Pc, t = compute_Pt(1000000)
+    Pc, t= compute_Pt(1000000)
 
     filename ='Pt_data.csv'
 
