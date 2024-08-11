@@ -1,27 +1,27 @@
 # srm_computing
 
-## Step1:Clone Repository
+## Step1: Clone Repository
 
 ```bash
 git clone https://github.com/hhhhxl/propolsion.git
 cd propolsion
 ```
 
-## Step2:Create Conda Evironment
+## Step2: Create Conda Evironment
 ```bash
 conda create -n srm python=3.10
 conda activate srm
 ```
 
-### Please install anaconda
+### Note: Please install Anaconda！！
 
-## Step3:Install Requirements
+## Step3: Install Requirements
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## step4:Run!
+## Step4: Run!
 
 `python main.py`
 
@@ -41,7 +41,7 @@ pip install -r requirements.txt
 
 # note: 
 
-此版本肉厚曲线单位为英寸和英寸^2
+目前版本肉厚曲线单位为英寸和英寸^2
 
 At单位为cm2
 
