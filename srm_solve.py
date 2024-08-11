@@ -53,12 +53,10 @@ class SRM_Solver:
         return Rest
 
     
-    def solve_ode(self,ode_function,P0,e_max):
+    def Get_Ctp(ep, rho_s, Vc, At, dc0, rate):
+        # 计算Ctp
+        Ctp1 = np.sqrt((1-np.exp(-0.0001575*(Vc/At)))*(1+0.001772*(2*rate)))/dc0
+        Ctp2 = 0.12754*((ep/rho_s)**(1/6))
+        Ctp = (0.774721**ep)*((Ctp2*Ctp1)**0.00501)
 
-        # 定义微分方程
-        pc0,e_span = self.init_val(P0,e_max)
-
-
-        solution = solve_ivp(ode_function, e_span, [pc0], method='RK45', t_eval=np.linspace(e_span[0], e_span[1], 100))
-        
-        return solution
+        return Ctp

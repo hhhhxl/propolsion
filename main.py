@@ -99,7 +99,7 @@ def init_computation():
     """
 
     SRM_ROOT_DIR, SETTINGS_ROOT_DIR, burning_rate_dir, grain_dir, A_e_dir, nozzle_dir= set_directory()
-    
+
     data_grain = read_json(f"{grain_dir}/grain_test.json")
     data_burning_rate = read_json(f"{burning_rate_dir}/burning_rate.json")
     data_A_e = read_and_extract_data(f"{A_e_dir}/test.txt")
@@ -111,12 +111,12 @@ def load_Ab():
 
     """
     加载并处理固体火箭发动机性能数据。
-    
+
     该函数从指定的目录中读取燃烧室面积比（Ab）与排气孔喉部比（e）的数据，
     并进行必要的数据处理，包括过滤无效数据、计算平均肉厚以及计算Ab的变化量。
     最后，返回处理后的Ab数据和平均肉厚。
     """
-    
+
 
     SRM_ROOT_DIR, SETTINGS_ROOT_DIR, burning_rate_dir, grain_dir, A_e_dir, nozzle_dir= set_directory()
 
@@ -171,7 +171,7 @@ def compute_Pt(P0):
     data_grain, data_burning_rate, data_A_e, data_nozzle = init_computation()
     Ab_data, e_data, e_step, Vc_data = load_Ab()
 
-    
+
 
     Vc_data = 1e-6*data_grain["Volum"] - Vc_data
 
@@ -185,7 +185,7 @@ def compute_Pt(P0):
     gamma = data_grain["gamma"]
 
     Gamma = srm.SRM_Solver.Gamma(gamma)
-    At = 1e-4*data_nozzle["At"]  
+    At = 1e-4*data_nozzle["At"]
 
 
     K0 = Ab_data[0] / At
@@ -195,7 +195,7 @@ def compute_Pt(P0):
     #Pc = np.append(Pc,[0])
 
     t = np.array([])
-    
+
 
     Pc = np.append(Pc,P0)
 
@@ -278,7 +278,7 @@ def compute_Pt(P0):
         # if (i != 0) and (Pc_unit < P_atm):
         #     break
 
-    
+
     t = np.insert(t, 0, 0)
     Pc = np.insert(Pc, 0, 0)
 
@@ -406,7 +406,7 @@ def write_to_csv_with_pandas(t, Pc, filename):
 
 def compute_init_ig(P0, Vc, Gamma, c_star, At, rho_p, K0, rate_a, rate_n):
     #计算点火段
-    
+
     C_eq = (rho_p*c_star*rate_a)**(1/(1-rate_n))
     Pceq = C_eq*(K0**(1/(1-rate_n)))
 
@@ -421,6 +421,146 @@ def compute_init_ig(P0, Vc, Gamma, c_star, At, rho_p, K0, rate_a, rate_n):
 
     return t
 
+def Compute_M(rho_b, c_star, Kn, Ctp, phi_a, rate_a, rate_n):
+    #计算M
+    C1 = (rho_b*c_star*rate_a*Kn*phi_a)/Ctp
+    # M = C1**(1/(1.000835-rate_n))
+
+    return C1
+
+def compute_Pt_s(P0):
+    #循环迭代计算
+    i = 0
+
+    # 初始化计算过程，包括读取 Grain、燃烧速率、A_e 和喷管数据，并读取和提取设置文件中的变量
+    data_grain, data_burning_rate, data_A_e, data_nozzle = init_computation()
+    Ab_data, e_data, e_step, Vc_data = load_Ab()
+
+
+
+    Vc_data = 1e-6*data_grain["Volum"] - Vc_data
+
+
+    # 获取计算参数
+    rho_b = 1000*data_grain["density"]
+
+    P_atm = data_nozzle["P_atm"]
+
+    c_star = data_grain["C*"]
+    gamma = data_grain["gamma"]
+
+    rho_s = 1000*data_grain["rho_s"]
+    dc0 = data_grain["dc0"]
+
+    ep = data_grain["ep"]
+    phi_a =data_grain["phi_a"]
+
+
+    Gamma = srm.SRM_Solver.Gamma(gamma)
+    At = 1e-4*data_nozzle["At"]
+
+
+    K0 = Ab_data[0] / At
+
+    #初始化numpy列表
+    Pc = np.array([])
+    #Pc = np.append(Pc,[0])
+
+    t = np.array([])
+
+
+    Pc = np.append(Pc,P0)
+
+    rate_a = srm.SRM_Solver.rate_a(P0, data_burning_rate)
+    rate_n = srm.SRM_Solver.rate_n(P0, data_burning_rate)
+
+    #计算点火段长度
+    t_ig = np.append(t,compute_init_ig(P0, Vc_data[0], Gamma, c_star, At, rho_b, K0, rate_a, rate_n))
+    t = np.append(t,[t_ig])
+
+
+    #设置初值
+    dP = 0
+
+
+    #进入循环
+    #while True:
+    for i in tqdm(range(len(Ab_data)), desc="Computing"):
+
+        #获取a，n
+        rate_a = srm.SRM_Solver.rate_a(Pc[i], data_burning_rate)
+        rate_n = srm.SRM_Solver.rate_n(Pc[i], data_burning_rate)
+
+        rate = rate_a*((Pc[i])**(rate_n))
+
+
+        #获取Kb
+        Kb = Ab_data[i] / At
+
+        #获取Ctp
+        Ctp = srm.SRM_Solver.Get_Ctp(ep, rho_s, Vc_data[i], At, dc0, rate)
+
+        #计算M
+        M = Compute_M(rho_b, c_star, Kb, Ctp, phi_a, rate_a, rate_n)
+
+
+
+        #计算平衡压强
+        Pceq = ((1-ep)*M)**(1/(1.000835-rate_n))
+
+        #定义计算算子C2
+        C2 = rate_a / (c_star*(Gamma**2)*At)
+
+
+        #计算实际压强
+        pp1 = Pceq**(1-rate_n)
+        pp2 = C2*Vc_data[i]*(dP/e_step)
+
+        pp3 = 1/(1-rate_n)
+
+        # pp1 = round(pp1, 4)
+
+        # pp2 = round(pp2, 4)
+        # pp3 = round(pp3, 4)
+
+        Pc_unit = ((pp1 - pp2)**pp3 + Pc[i]) / 2
+
+        #将Pc_unit加入列表
+        Pc = np.append(Pc, Pc_unit)
+
+        #计算P_code
+        P_cold = Pc[i]
+
+        #计算deltaP
+        dp = Pc_unit - P_cold
+
+        #计算时间并加入列表
+        t_unit = e_step / (rate_a*(Pc_unit)**(rate_n))
+
+        tt = t[i] + t_unit
+
+        t = np.append(t, tt)
+
+        #循环变量自增
+        i = i+1
+
+
+        #循环结束判断
+        if i == (len(Ab_data)):
+
+            # Vc = 1e-6*data_grain["Volum"]
+            # t_post = compute_post(Vc, Gamma, Pceq, c_star, At,Pc)
+
+            # t = np.append(t, t_post)
+            # Pc = np.append(Pc, 0)
+            break
+
+
+    t = np.insert(t, 0, 0)
+    Pc = np.insert(Pc, 0, 0)
+
+    return Pc, t
+
 def compute_post(Vc, Gamma, Pceq, c_star, At, Pc):
     #后效段求解
 
@@ -430,17 +570,18 @@ def compute_post(Vc, Gamma, Pceq, c_star, At, Pc):
     ttt1 = Vc/(Gamma*c_star*At)
     ttt2 = np.log(Pceq/Pc)
     t = ttt1*ttt2
-    
-    
+
+
     return t
 
 if __name__ == '__main__':
 
-    Pc, t= compute_Pt(1000000)
+    # Pc, t= compute_Pt(1000000)
+    Pc, t = compute_Pt_s(1000000)
 
     filename ='Pt_data.csv'
 
-    #write_to_csv_with_pandas(t, Pc, filename)
+    # write_to_csv_with_pandas(t, Pc, filename)
 
     F = calculate_F(Pc)
 
