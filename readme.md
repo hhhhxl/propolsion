@@ -35,7 +35,7 @@ pip install -r requirements.txt
 - [x] 输出F-T曲线
 - [x] 计算点火药量
 - [ ] 用户交互
-- [ ] 总冲比冲计算
+- [x] 总冲比冲计算
 
 ---
 
