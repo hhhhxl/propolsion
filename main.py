@@ -9,6 +9,8 @@ from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import pandas as pd
+import sys
+
 
 
 def set_directory():
@@ -418,6 +420,12 @@ def compute_init_ig(P0, Vc, Gamma, c_star, At, rho_p, K0, rate_a, rate_n):
     C2 = np.log(cc2 / ccc2)
 
     t = C1*C2
+
+    if C2 != C2:
+        print("\n*******************************************************************")
+        print("点火压设置错误!!!")
+        print("*******************************************************************\n")
+        sys.exit(0)
 
     return t
 
