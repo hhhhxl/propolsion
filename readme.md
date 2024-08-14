@@ -58,7 +58,7 @@ At单位为cm2
 "phi_a": 侵蚀函数，此版本未开发，默认为1
 
 # Contact us:
-Email：hhhhxl25500@gmail.com
+Email：hxlhhh25500@gmail.com
 
 # Update Date：2024.8.14
 
