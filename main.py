@@ -421,6 +421,8 @@ def compute_init_ig(P0, Vc, Gamma, c_star, At, rho_p, K0, rate_a, rate_n):
 
     t = C1*C2
 
+
+    #点火压设置错误导致的异常处理
     if C2 != C2:
         print("\n*******************************************************************")
         print("点火压设置错误!!!")
