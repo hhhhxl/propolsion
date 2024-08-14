@@ -60,3 +60,15 @@ class SRM_Solver:
         Ctp = (0.774721**ep)*((Ctp2*Ctp1)**0.00501)
 
         return Ctp
+    
+    def Get_It(F, T):
+        # 计算Ctp
+        integral = np.trapz(F, T)
+
+        return integral
+    
+    def Get_Isp(It, m):
+        # 计算Ctp
+        Isp = It/(m*9.81)
+
+        return Isp

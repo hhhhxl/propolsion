@@ -327,6 +327,7 @@ def calculate_F(p_c):
 
 
     F = C_F * eta * At * p_c
+    F[0] = 0
 
     return F
 
@@ -338,52 +339,81 @@ def plot_chart_P(t, Pc):
     :param Pc: 对应的 Pc 值序列
     """
 
-    # t = np.insert(t, 0, t_ig)
-    # t = np.insert(t, 0, t_ig)
-
-    plt.figure(num='Pc vs Time',figsize=(8, 6))
+    #实例化
+    fig, ax = plt.subplots(figsize=(8, 6))
 
     # 设置图表的标题和坐标轴标签
-    plt.title('Pc-----Time')
-    plt.xlabel('Time (s)')  # 横坐标单位
-    plt.ylabel('Pc (Pa)')  # 纵坐标单位
+    ax.set_title('Pc-----Time')
+    ax.set_xlabel('Time (s)')
+    ax.set_ylabel('Pc (Pa)')
 
     # 绘制数据点，并使用圆点形状，同时减小圆点大小
-    plt.plot(t, Pc, 'o-', markersize=3, label='Data Points')  # 'o-' 表示圆形标记和线连接
+    ax.plot(t, Pc, 'o-', markersize=3, label='Data Points')
 
     # 显示网格
-    plt.grid(True)
+    ax.grid(True)
+
+    # 总时间绘图
+    # 调整文本位置，确保不会与图表上的元素重叠
+    ax.text(1, -0.06, f'Total Time: {t[len(t)-1]:.2f} s',
+            fontsize=10, verticalalignment='top', horizontalalignment='right', transform=ax.transAxes,
+            color='red',
+            bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
 
     # 添加图例
-    plt.legend()
+    ax.legend()
 
-    # 显示图表
-    #plt.show()
 
-def plot_chart_F(t, Pc):
+def plot_chart_F(t, F):
     """
     绘制 Pc 随时间变化的图表。
+    并且计算比冲总冲，然后输出到F-T图上
 
     :param t: 时间序列数据
     :param Pc: 对应的 Pc 值序列
     """
 
+    data_grain, data_burning_rate, data_A_e, data_nozzle = init_computation()
 
-    plt.figure(num='F vs Time',figsize=(8, 6))
+    Ab_data, e_data, e_step, Vc_data = load_Ab()
+
+    #计算质量
+    m = Vc_data[0]*data_grain["density"]*1000
+
+    #计算总冲
+    It = srm.SRM_Solver.Get_It(F, t)
+
+    #计算比冲
+    Isp = srm.SRM_Solver.Get_Isp(It, m)
+
+    #实例化
+    fig, ax = plt.subplots(figsize=(8, 6))
 
     # 设置图表的标题和坐标轴标签
-    plt.title('F-----Time')
-    plt.xlabel('Time (s)')  # 横坐标单位
-    plt.ylabel('F (N)')  # 纵坐标单位
+    ax.set_title('F-----Time')
+    ax.set_xlabel('Time (s)')
+    ax.set_ylabel('F (N)')
 
     # 绘制数据点，并使用圆点形状，同时减小圆点大小
-    plt.plot(t, Pc, 'o-', markersize=3, label='Data Points')  # 'o-' 表示圆形标记和线连接
+    ax.plot(t, Pc, 'o-', markersize=3, label='Data Points')
 
     # 显示网格
-    plt.grid(True)
+    ax.grid(True)
+
+    # 总冲比冲绘制
+    # 调整文本位置，确保不会与图表上的元素重叠
+    ax.text(0, -0.055, f'Total Impulse: {It:.2f} N*s\nSpecific Impulse (Isp): {Isp:.2f} s',
+            fontsize=10, verticalalignment='top', transform=ax.transAxes,
+            color='red',
+            bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
+    
+    ax.text(1, -0.06, f'Total Time: {t[len(t)-1]:.2f} s',
+            fontsize=10, verticalalignment='top', horizontalalignment='right', transform=ax.transAxes,
+            color='red',
+            bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
 
     # 添加图例
-    plt.legend()
+    ax.legend()
 
     # 显示图表
     plt.show()
